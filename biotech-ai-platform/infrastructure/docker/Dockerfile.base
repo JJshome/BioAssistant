@@ -1,0 +1,9 @@
+# Example Base Dockerfile for Node.js services
+# FROM node:18-alpine AS base_node
+# WORKDIR /usr/src/app
+# RUN npm install -g pnpm
+
+# Example Base Dockerfile for Python services
+# FROM python:3.10-slim AS base_python
+# WORKDIR /usr/src/app
+# RUN pip install poetry

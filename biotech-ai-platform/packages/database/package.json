@@ -1,0 +1,23 @@
+{
+  "name": "@biotech-ai/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -w -p tsconfig.build.json",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "db:generate": "echo \"Simulating Prisma generate or similar\"",
+    "db:migrate": "echo \"Simulating Prisma migrate dev or similar\""
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "eslint": "^8",
+    "eslint-config-prettier": "^8.3.0",
+    "prettier": "^3.0.0"
+  }
+}

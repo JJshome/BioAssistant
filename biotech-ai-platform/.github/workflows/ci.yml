@@ -1,0 +1,159 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-format-check:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Or your preferred LTS version
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8 # Or your preferred PNPM version
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Linting (Turbo)
+        run: pnpm turbo run lint
+
+      - name: Run Formatting Check (Prettier)
+        # Assuming you have a root script or run per package like: pnpm --filter '*' format:check
+        # For simplicity, let's assume a turbo task or a root script
+        run: pnpm run format:check # You might need to define this script in root package.json or run individually
+
+  # test: # Placeholder for future test job
+  #   name: Run Tests
+  #   runs-on: ubuntu-latest
+  #   needs: lint-format-check
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '18'
+  #
+  #     - name: Setup PNPM
+  #       uses: pnpm/action-setup@v2
+  #       with:
+  #         version: 8
+  #         run_install: false
+  #
+  #     - name: Get pnpm store directory
+  #       id: pnpm-cache-test
+  #       shell: bash
+  #       run: |
+  #         echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+  #
+  #     - name: Setup pnpm cache
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ${{ steps.pnpm-cache-test.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pnpm-store-
+  #
+  #     - name: Install dependencies
+  #       run: pnpm install --frozen-lockfile
+  #
+  #     - name: Run Tests (Turbo)
+  #       run: pnpm turbo run test
+
+  build:
+    name: Build Projects
+    runs-on: ubuntu-latest
+    needs: lint-format-check # Add 'test' to needs when test job is un-commented
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache-build
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache-build.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all projects (Turbo)
+        run: pnpm turbo run build
+
+# Note:
+# 1. Python setup will be needed for testing/building Python services.
+#    This can be added to the 'test' or 'build' jobs or in separate jobs.
+#    Example:
+#    - name: Set up Python
+#      uses: actions/setup-python@v4
+#      with:
+#        python-version: '3.10'
+#        cache: 'poetry' # If using poetry
+#    - name: Install Python dependencies
+#      run: |
+#        cd services/literature-service # Example
+#        poetry install --no-root --no-dev
+
+# 2. The 'format:check' script needs to be defined in your root package.json,
+#    or you would run prettier checks per package/workspace.
+#    Example for root package.json:
+#    "scripts": {
+#      "format:check": "prettier --check .",
+#      ...
+#    }
+#    If not using a root prettier check, this step might need adjustment.
+#    For now, this subtask will just create the yml file.
+#    The user will need to ensure their project has a `pnpm run format:check` command
+#    that works with their setup (e.g. `prettier --check .` in root or per-package checks aggregated by turbo).
